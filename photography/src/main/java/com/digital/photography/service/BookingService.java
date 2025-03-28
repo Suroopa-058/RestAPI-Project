@@ -4,8 +4,10 @@ import com.digital.photography.entities.Booking;
 import com.digital.photography.repository.BookingRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -13,60 +15,66 @@ import java.util.Optional;
 public class BookingService {
 
     @Autowired
-    private BookingRepo bookingRepo;
+    private BookingRepo bookingRepository;
 
-    // Create a new Booking
-    public Booking createBooking(Booking booking) {
-        return bookingRepo.save(booking);
+    // Get all bookings with pagination
+    public Page<Booking> getAllBookings(int page, int size) {
+        return bookingRepository.findAll(PageRequest.of(page, size));
     }
 
-    // Get all Bookings
-    public List<Booking> getAllBookings() {
-        return bookingRepo.findAll();
-    }
-
-    // Get Booking by ID
+    // Get booking by ID
     public Optional<Booking> getBookingById(int id) {
-        return bookingRepo.findById(id);
+        return bookingRepository.findById(id);
     }
 
-    // Get Bookings by Client ID
-    public List<Booking> getBookingsByClientId(int clientId) {
-        return bookingRepo.findByClientId(clientId);
+    // Create a new booking
+    public Booking createBooking(Booking booking) {
+        return bookingRepository.save(booking);
     }
 
-    // Get Bookings by Photographer ID
-    public List<Booking> getBookingsByPhotographerId(int photographerId) {
-        return bookingRepo.findByPhotographerId(photographerId);
+    // Update an existing booking
+    public Booking updateBooking(int id, Booking bookingDetails) {
+        return bookingRepository.findById(id).map(booking -> {
+            booking.setPhotographerId(bookingDetails.getPhotographer());
+            booking.setClient(bookingDetails.getClient());
+            booking.setBookingDate(bookingDetails.getBookingDate());
+            booking.setStatus(bookingDetails.getStatus());
+            return bookingRepository.save(booking);
+        }).orElseThrow(() -> new RuntimeException("Booking not found with id " + id));
     }
 
-    // Get Bookings by Status
-    public List<Booking> getBookingsByStatus(String status) {
-        return bookingRepo.findByStatus(status);
-    }
-
-    // Get Bookings After a Certain Date
-    public List<Booking> getBookingsAfterDate(LocalDate date) {
-        return bookingRepo.findBookingsAfterDate(date);
-    }
-
-    // Update Booking Status
-    public void updateBookingStatus(int id, String status) {
-        bookingRepo.updateBookingStatus(id, status);
-    }
-
-    // Delete Booking
+    // Delete a booking
     public void deleteBooking(int id) {
-        bookingRepo.deleteBookingById(id);
+        if (bookingRepository.existsById(id)) {
+            bookingRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Booking not found with id " + id);
+        }
     }
 
-    public Page<Booking> getBookingsPagedAndSorted(int page, int size, String sortBy, String direction) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBookingsPagedAndSorted'");
+    // Sort bookings by a specific field (e.g., "bookingDate", "status")
+    public List<Booking> sortBookings(String field) {
+        return bookingRepository.findAll(Sort.by(field));
     }
 
-    public Object getTotalAmountByBookingId(int bookingId) {
+    // Sort bookings by a specific field and direction
+    public List<Booking> sortBookings(String field, String direction) {
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(field).descending() : Sort.by(field).ascending();
+        return bookingRepository.findAll(sort);
+    }
+
+    // Get bookings by Photographer ID
+    public List<Booking> getBookingsByPhotographerId(int photographerId) {
+        return bookingRepository.findBookingsByPhotographerId(photographerId);
+    }
+
+    // Get bookings by Client ID
+    public List<Booking> getBookingsByClientId(int clientId) {
+        return bookingRepository.findBookingsByClientId(clientId);
+    }
+
+    public List<Booking> getBookingsByUserId(int userId) {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTotalAmountByBookingId'");
+        throw new UnsupportedOperationException("Unimplemented method 'getBookingsByUserId'");
     }
 }

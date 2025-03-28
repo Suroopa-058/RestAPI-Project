@@ -18,73 +18,38 @@ public class PhotoController {
     @Autowired
     private PhotoService photoService;
 
-    // ✅ Get paginated & sorted photos
+    // Get all photos with pagination
     @GetMapping("/page/{page}/{size}")
-    public ResponseEntity<Page<Photo>> getPhotosPagedAndSorted(
-            @PathVariable int page,
-            @PathVariable int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
-
-        Page<Photo> photos = photoService.getPhotosPagedAndSorted(page, size, sortBy, direction);
-        return new ResponseEntity<>(photos, HttpStatus.OK);
+    public ResponseEntity<Page<Photo>> getAllPhotos(@PathVariable int page, @PathVariable int size) {
+        return new ResponseEntity<>(photoService.getAllPhotos(page, size), HttpStatus.OK);
     }
 
-    // ✅ Get all photos without pagination
-    @GetMapping
-    public ResponseEntity<List<Photo>> getAllPhotos() {
-        return new ResponseEntity<>(photoService.getAllPhotos(), HttpStatus.OK);
-    }
-
-    // ✅ Get photo by ID
+    // Get photo by ID
     @GetMapping("/{id}")
     public ResponseEntity<Photo> getPhotoById(@PathVariable int id) {
         Optional<Photo> photo = photoService.getPhotoById(id);
         return photo.map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ✅ Get photos by Portfolio ID
-    @GetMapping("/portfolio/{portfolioId}")
-    public ResponseEntity<List<Photo>> getPhotosByPortfolioId(@PathVariable int portfolioId) {
-        List<Photo> photos = photoService.getPhotosByPortfolioId(portfolioId);
-
-        if (photos.isEmpty()) {
-            return ResponseEntity.noContent().build(); // HTTP 204 if no photos found
-        }
-
-        return new ResponseEntity<>(photos, HttpStatus.OK);
-    }
-
-    // ✅ Get photos within a price range
-    @GetMapping("/price-range")
-    public ResponseEntity<List<Photo>> getPhotosByPriceRange(
-            @RequestParam double min,
-            @RequestParam double max) {
-
-        List<Photo> photos = photoService.getPhotosByPriceRange(min, max);
-
-        if (photos.isEmpty()) {
-            return ResponseEntity.noContent().build(); // HTTP 204 if no photos found
-        }
-
-        return new ResponseEntity<>(photos, HttpStatus.OK);
-    }
-
-    // ✅ Create a new photo
+    // Create a new photo
     @PostMapping
     public ResponseEntity<Photo> createPhoto(@RequestBody Photo photo) {
         return new ResponseEntity<>(photoService.createPhoto(photo), HttpStatus.CREATED);
     }
 
-    // ✅ Update photo price
+    // Update photo price
     @PutMapping("/{id}/price")
-    public ResponseEntity<String> updatePhotoPrice(@PathVariable int id, @RequestParam double price) {
-        photoService.updatePhotoPrice(id, price);
-        return ResponseEntity.ok("Photo price updated successfully.");
+    public ResponseEntity<Photo> updatePhotoPrice(@PathVariable int id, @RequestBody double newPrice) {
+        try {
+            Photo updatedPhoto = photoService.updatePhotoPrice(id, newPrice);
+            return ResponseEntity.ok(updatedPhoto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // ✅ Delete a photo
+    // Delete a photo
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePhoto(@PathVariable int id) {
         try {
@@ -93,5 +58,37 @@ public class PhotoController {
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    // Get photos by portfolio ID
+    @GetMapping("/portfolio/{portfolioId}")
+    public ResponseEntity<List<Photo>> getPhotosByPortfolioId(@PathVariable int portfolioId) {
+        List<Photo> photos = photoService.getPhotosByPortfolioId(portfolioId);
+
+        if (photos.isEmpty()) {
+            return ResponseEntity.noContent().build(); // HTTP 204 if no photos found
+        }
+
+        return ResponseEntity.ok(photos);
+    }
+
+    // Get photos by price range
+    @GetMapping("/price-range")
+    public ResponseEntity<List<Photo>> getPhotosByPriceRange(
+            @RequestParam double minPrice,
+            @RequestParam double maxPrice) {
+        List<Photo> photos = photoService.getPhotosByPriceRange(minPrice, maxPrice);
+
+        if (photos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(photos);
+    }
+
+    // Sort photos by a specific field
+    @GetMapping("/sort/{field}/{direction}")
+    public ResponseEntity<List<Photo>> sortPhotos(@PathVariable String field, @PathVariable String direction) {
+        return ResponseEntity.ok(photoService.sortPhotos(field, direction));
     }
 }

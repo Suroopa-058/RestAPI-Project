@@ -3,10 +3,11 @@ package com.digital.photography.controller;
 import com.digital.photography.entities.Booking;
 import com.digital.photography.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,61 +18,75 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-    // Create Booking
-    @PostMapping
-    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
-        return ResponseEntity.ok(bookingService.createBooking(booking));
+    // Get all bookings by pagination
+    @GetMapping("/page/{page}/{size}")
+    public ResponseEntity<Page<Booking>> getAllBookings(@PathVariable int page, @PathVariable int size) {
+        return new ResponseEntity<>(bookingService.getAllBookings(page, size), HttpStatus.OK);
     }
 
-    // Retrieve All Bookings
-    @GetMapping
-    public ResponseEntity<List<Booking>> getAllBookings() {
-        return ResponseEntity.ok(bookingService.getAllBookings());
-    }
-
-    // Retrieve Booking by ID
+    // Get booking by ID
     @GetMapping("/{id}")
     public ResponseEntity<Booking> getBookingById(@PathVariable int id) {
         Optional<Booking> booking = bookingService.getBookingById(id);
-        return booking.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return booking.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Retrieve Bookings by Client ID
-    @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<Booking>> getBookingsByClientId(@PathVariable int clientId) {
-        return ResponseEntity.ok(bookingService.getBookingsByClientId(clientId));
+    // Create a new booking
+    @PostMapping
+    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
+        return new ResponseEntity<>(bookingService.createBooking(booking), HttpStatus.CREATED);
     }
 
-    // Retrieve Bookings by Photographer ID
+    // Update an existing booking
+    @PutMapping("/{id}")
+    public ResponseEntity<Booking> updateBooking(@PathVariable int id, @RequestBody Booking bookingDetails) {
+        try {
+            Booking updatedBooking = bookingService.updateBooking(id, bookingDetails);
+            return ResponseEntity.ok(updatedBooking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Delete a booking
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBooking(@PathVariable int id) {
+        try {
+            bookingService.deleteBooking(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // Sort bookings by a specific field
+    @GetMapping("/sort/{field}/{direction}")
+    public ResponseEntity<List<Booking>> sortBookings(@PathVariable String field, @PathVariable String direction) {
+        return ResponseEntity.ok(bookingService.sortBookings(field, direction));
+    }
+
+    // Get bookings by user ID
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Booking>> getBookingsByUserId(@PathVariable int userId) {
+        List<Booking> bookings = bookingService.getBookingsByUserId(userId);
+        
+        if (bookings.isEmpty()) {
+            return ResponseEntity.noContent().build(); // HTTP 204 if no bookings found
+        }
+        
+        return ResponseEntity.ok(bookings);
+    }
+
+    // Get bookings by photographer ID
     @GetMapping("/photographer/{photographerId}")
     public ResponseEntity<List<Booking>> getBookingsByPhotographerId(@PathVariable int photographerId) {
-        return ResponseEntity.ok(bookingService.getBookingsByPhotographerId(photographerId));
-    }
-
-    // Retrieve Bookings by Status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Booking>> getBookingsByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(bookingService.getBookingsByStatus(status));
-    }
-
-    // Retrieve Bookings After a Certain Date
-    @GetMapping("/after-date")
-    public ResponseEntity<List<Booking>> getBookingsAfterDate(@RequestParam String date) {
-        LocalDate parsedDate = LocalDate.parse(date);
-        return ResponseEntity.ok(bookingService.getBookingsAfterDate(parsedDate));
-    }
-
-    // Update Booking Status
-    @PutMapping("/{id}/status")
-    public ResponseEntity<String> updateBookingStatus(@PathVariable int id, @RequestParam String status) {
-        bookingService.updateBookingStatus(id, status);
-        return ResponseEntity.ok("Booking status updated successfully.");
-    }
-
-    // Delete Booking
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteBooking(@PathVariable int id) {
-        bookingService.deleteBooking(id);
-        return ResponseEntity.ok("Booking deleted successfully.");
+        List<Booking> bookings = bookingService.getBookingsByPhotographerId(photographerId);
+        
+        if (bookings.isEmpty()) {
+            return ResponseEntity.noContent().build(); // HTTP 204 if no bookings found
+        }
+        
+        return ResponseEntity.ok(bookings);
     }
 }

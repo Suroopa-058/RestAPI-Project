@@ -20,25 +20,8 @@ public class PortfolioController {
 
     // Get all portfolios with pagination
     @GetMapping("/page/{page}/{size}")
-    public ResponseEntity<Page<Portfolio>> getPortfoliosPaged(
-            @PathVariable int page,
-            @PathVariable int size) {
-        
-        Page<Portfolio> portfolios = portfolioService.getPortfoliosPaged(page, size);
-        return new ResponseEntity<>(portfolios, HttpStatus.OK);
-    }
-
-    // Get all portfolios sorted by a specific field
-    @GetMapping("/sort/{field}/{direction}")
-    public ResponseEntity<List<Portfolio>> sortPortfolios(@PathVariable String field, @PathVariable String direction) {
-        return ResponseEntity.ok(portfolioService.sortPortfolios(field, direction));
-    }
-    
-
-    // Get all portfolios
-    @GetMapping
-    public ResponseEntity<List<Portfolio>> getAllPortfolios() {
-        return new ResponseEntity<>(portfolioService.getAllPortfolios(), HttpStatus.OK);
+    public ResponseEntity<Page<Portfolio>> getAllPortfolios(@PathVariable int page, @PathVariable int size) {
+        return new ResponseEntity<>(portfolioService.getAllPortfolios(page, size), HttpStatus.OK);
     }
 
     // Get portfolio by ID
@@ -46,19 +29,7 @@ public class PortfolioController {
     public ResponseEntity<Portfolio> getPortfolioById(@PathVariable int id) {
         Optional<Portfolio> portfolio = portfolioService.getPortfolioById(id);
         return portfolio.map(ResponseEntity::ok)
-                        .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Get portfolios by photographer ID
-    @GetMapping("/photographer/{photographerId}")
-    public ResponseEntity<List<Portfolio>> getPortfoliosByPhotographer(@PathVariable int photographerId) {
-        List<Portfolio> portfolios = portfolioService.getPortfoliosByPhotographer(photographerId);
-
-        if (portfolios.isEmpty()) {
-            return ResponseEntity.noContent().build(); // HTTP 204 if no portfolios found
-        }
-
-        return new ResponseEntity<>(portfolios, HttpStatus.OK);
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // Create a new portfolio
@@ -67,11 +38,15 @@ public class PortfolioController {
         return new ResponseEntity<>(portfolioService.createPortfolio(portfolio), HttpStatus.CREATED);
     }
 
-    // Update an existing portfolio title
+    // Update an existing portfolio
     @PutMapping("/{id}")
-    public ResponseEntity<String> updatePortfolioTitle(@PathVariable int id, @RequestParam String title) {
-        portfolioService.updatePortfolioTitle(id, title);
-        return ResponseEntity.ok("Portfolio title updated successfully.");
+    public ResponseEntity<Portfolio> updatePortfolio(@PathVariable int id, @RequestBody Portfolio portfolioDetails) {
+        try {
+            Portfolio updatedPortfolio = portfolioService.updatePortfolio(id, portfolioDetails);
+            return ResponseEntity.ok(updatedPortfolio);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // Delete a portfolio
@@ -83,5 +58,23 @@ public class PortfolioController {
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    // Sort portfolios by a specific field
+    @GetMapping("/sort/{field}/{direction}")
+    public ResponseEntity<Object> sortPortfolios(@PathVariable String field, @PathVariable String direction) {
+        return ResponseEntity.ok(portfolioService.sortPortfolios(field, direction));
+    }
+
+    // Get portfolios by photographer ID
+    @GetMapping("/photographer/{photographerId}")
+    public ResponseEntity<List<Portfolio>> getPortfoliosByPhotographer(@PathVariable int photographerId) {
+        List<Portfolio> portfolios = portfolioService.getPortfoliosByPhotographer(photographerId);
+
+        if (portfolios.isEmpty()) {
+            return ResponseEntity.noContent().build(); // HTTP 204 if no portfolios found
+        }
+
+        return ResponseEntity.ok(portfolios);
     }
 }

@@ -40,4 +40,8 @@ public interface BookingRepo extends JpaRepository<Booking, Integer> {
     @Transactional
     @Query("DELETE FROM Booking b WHERE b.id = :id")
     void deleteBookingById(@Param("id") int id);
+
+    List<Booking> findBookingsByPhotographerId(int photographerId);
+
+    List<Booking> findBookingsByClientId(int clientId);
 }

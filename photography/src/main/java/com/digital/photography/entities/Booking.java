@@ -70,4 +70,29 @@ public class Booking {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public void setClient(int clientId2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setClient'");
+    }
+
+    public Object getBookingDate() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBookingDate'");
+    }
+
+    public void setBookingDate(Object bookingDate) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setBookingDate'");
+    }
+
+    public int getClient() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getClient'");
+    }
+
+    public int getPhotographer() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPhotographer'");
+    }
 }
